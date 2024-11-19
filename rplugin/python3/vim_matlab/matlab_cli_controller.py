@@ -26,7 +26,7 @@ class MatlabCliController:
         num_retry = 0
         while num_retry < 3:
             try:
-                self.sock.sendall(code + "\n")
+                self.sock.sendall((code + "\n").encode('utf-8'))  # Encode the string to bytes
                 logger.log.info(code)
                 break
             except Exception as ex:
@@ -52,4 +52,4 @@ class MatlabCliController:
         self.run_code(["help {};".format(name)])
 
     def send_ctrl_c(self):
-        self.sock.sendall("cancel\n")
+        self.sock.sendall("cancel\n".encode('utf-8'))  # Encode the string to bytes

@@ -6,6 +6,9 @@ import re
 import time
 import collections
 
+import sys
+sys.path.append(os.path.dirname(__file__))
+
 import neovim
 
 from matlab_cli_controller import MatlabCliController

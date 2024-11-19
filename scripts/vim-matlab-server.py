@@ -1,5 +1,4 @@
-#!/usr/bin/env python2
-
+#!/usr/bin/env python3
 __author__ = 'daeyun'
 
 use_pexpect = True
@@ -11,7 +10,7 @@ if use_pexpect:
 if not use_pexpect:
     from subprocess import Popen, PIPE
 
-import SocketServer
+import socketserver
 import os
 import random
 import signal
@@ -33,7 +32,8 @@ class Matlab:
     def launch_process(self):
         self.kill()
         if use_pexpect:
-            self.proc = pexpect.spawn("matlab", ["-nosplash", "-nodesktop"])
+            # self.proc = pexpect.spawn("matlab", ["-nosplash", "-nodesktop"])
+            self.proc = pexpect.spawn("/Applications/MATLAB_R2024b.app/bin/matlab", ["-nosplash", "-nodesktop"])
         else:
             self.proc = Popen(["matlab", "-nosplash", "-nodesktop"], stdin=PIPE,
                               close_fds=True, preexec_fn=os.setsid)
@@ -72,17 +72,17 @@ class Matlab:
                     hide_until_newline = True
                     self.proc.send(command)
                 else:
-                    self.proc.stdin.write(command)
+                    self.proc.stdin.write(command.encode())  # Python 3 requires encoding
                     self.proc.stdin.flush()
                 break
             except Exception as ex:
-                print ex
+                print(ex)
                 self.launch_process()
                 num_retry += 1
                 time.sleep(1)
 
 
-class TCPHandler(SocketServer.StreamRequestHandler):
+class TCPHandler(socketserver.StreamRequestHandler):
     def handle(self):
         print_flush("New connection: {}".format(self.client_address))
 
@@ -90,7 +90,7 @@ class TCPHandler(SocketServer.StreamRequestHandler):
             msg = self.rfile.readline()
             if not msg:
                 break
-            msg = msg.strip()
+            msg = msg.strip().decode()  # Decode bytes to string for Python 3
             print_flush((msg[:74] + '...') if len(msg) > 74 else msg, end='')
 
             options = {
@@ -119,31 +119,21 @@ def status_monitor_thread(matlab):
     server.shutdown()
     server.server_close()
 
-
 def output_filter(output_string):
-    """
-    If the global variable `hide_until_newline` is True, this function will
-    return an empty string until it sees a string that contains a newline.
-    Used with `pexpect.spawn.interact` and `pexpect.spawn.send` to hide the
-    raw command from being shown.
-
-    :param output_string: String forwarded from MATLAB's stdout. Provided
-    by `pexpect.spawn.interact`.
-    :return: The filtered string.
-    """
     global hide_until_newline
+    # 문자열로 디코딩
+    output_string = output_string.decode('utf-8')
     if hide_until_newline:
         if '\n' in output_string:
             hide_until_newline = False
-            return output_string[output_string.find('\n'):]
+            return output_string[output_string.find('\n'):].encode('utf-8')  # bytes로 인코딩
         else:
-            return ''
+            return b''  # 빈 bytes 객체 반환
     else:
-        return output_string
+        return output_string.encode('utf-8')  # bytes로 인코딩
 
 
 def input_filter(input_string):
-    # Detect C-\
     if input_string == '\x1c':
         print_flush('Terminating')
         global auto_restart
@@ -152,12 +142,11 @@ def input_filter(input_string):
 
 
 def forward_input(matlab):
-    """Forward stdin to Matlab.proc's stdin."""
     if use_pexpect:
-        matlab.proc.interact(input_filter=input_filter,output_filter=output_filter)
+        matlab.proc.interact(input_filter=input_filter, output_filter=output_filter)
     else:
         while True:
-            matlab.proc.stdin.write(stdin.readline())
+            matlab.proc.stdin.write(stdin.readline().encode())  # Encode input for Python 3
 
 
 def start_thread(target=None, args=()):
@@ -167,7 +156,6 @@ def start_thread(target=None, args=()):
 
 
 def print_flush(value, end='\n'):
-    """Manually flush the line if using pexpect."""
     if use_pexpect:
         value += '\b' * len(value)
     sys.stdout.write(value + end)
@@ -176,10 +164,10 @@ def print_flush(value, end='\n'):
 
 def main():
     host, port = "localhost", 43889
-    SocketServer.TCPServer.allow_reuse_address = True
+    socketserver.TCPServer.allow_reuse_address = True
 
     global server
-    server = SocketServer.TCPServer((host, port), TCPHandler)
+    server = socketserver.TCPServer((host, port), TCPHandler)
     server.matlab = Matlab()
 
     start_thread(target=forward_input, args=(server.matlab,))
