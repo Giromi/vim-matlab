@@ -14,11 +14,16 @@ if g:matlab_server_launcher ==? 'tmux' && g:matlab_server_split ==? 'horizontal'
 elseif g:matlab_server_launcher ==? 'tmux' && g:matlab_server_split ==? 'vertical'
   let s:split_command = ':!tmux split-window -h '
 elseif g:matlab_server_launcher ==? 'vim' && g:matlab_server_split ==? 'horizontal'
-  let s:split_command = ':split term://'
+  let s:split_command = ':belowright split term://'
 else
-  let s:split_command = ':vsplit term://'
+  let s:split_command = ':belowright vsplit term://'
 endif
-let s:server_command = expand('<sfile>:p:h') . '/../../scripts/vim-matlab-server.py'
+
+" let s:server_command = expand('<sfile>:p:h') . '/../../scripts/vim-matlab-server.py'
+" let s:server_command = substitute(expand('<sfile>:p:h'), ' ', '\\ ', 'g') . '/../../scripts/vim-matlab-server.py'
+let s:server_command = substitute(fnamemodify(expand('<sfile>:p:h'), ':p'), ' ', '\\ ', 'g') . '/../../scripts/vim-matlab-server.py'
+
+
 
 command! MatlabLaunchServer :execute 'normal! ' . s:split_command . s:server_command . '<CR>'
 
