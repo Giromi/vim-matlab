@@ -27,16 +27,20 @@ server = None
 
 class Matlab:
     def __init__(self):
+        self.initial_dir = os.getcwd()  # 초기 디렉토리를 설정하거나 현재 디렉토리 사용
         self.launch_process()
 
     def launch_process(self):
         self.kill()
         if use_pexpect:
-            # self.proc = pexpect.spawn("matlab", ["-nosplash", "-nodesktop"])
             self.proc = pexpect.spawn("/Applications/MATLAB_R2024b.app/bin/matlab", ["-nosplash", "-nodesktop"])
+            # TODO: 초기 디렉토리 설정
+            # self.proc.sendline(f"cd('{self.initial_dir}');")
         else:
             self.proc = Popen(["matlab", "-nosplash", "-nodesktop"], stdin=PIPE,
                               close_fds=True, preexec_fn=os.setsid)
+            # TODO: 초기 디렉토리 설정
+            # self.run_code(f"cd('{self.initial_dir}');")
         return self.proc
 
     def cancel(self):
@@ -55,8 +59,7 @@ class Matlab:
 
         if run_timer:
             command = ("{randvar}=tic;{code},try,toc({randvar}),catch,end"
-                       ",clear('{randvar}');\n").format(randvar=rand_var,
-                                                        code=code.strip())
+                       ",clear('{randvar}');\n").format(randvar=rand_var, code=code.strip())
         else:
             command = "{}\n".format(code.strip())
 
@@ -101,7 +104,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             if msg in options:
                 options[msg]()
             else:
-                self.server.matlab.run_code(msg)
+                self.server.matlab.run_code(msg, run_timer=False)
         print_flush('Connection closed: {}'.format(self.client_address))
 
 
@@ -129,8 +132,7 @@ def output_filter(output_string):
             return output_string[output_string.find('\n'):].encode('utf-8')  # bytes로 인코딩
         else:
             return b''  # 빈 bytes 객체 반환
-    else:
-        return output_string.encode('utf-8')  # bytes로 인코딩
+    return output_string.encode('utf-8')  # bytes로 인코딩
 
 
 def input_filter(input_string):
@@ -175,7 +177,6 @@ def main():
 
     print_flush("Started server: {}".format((host, port)))
     server.serve_forever()
-
 
 if __name__ == "__main__":
     main()
