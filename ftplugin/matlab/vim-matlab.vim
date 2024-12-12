@@ -23,8 +23,6 @@ endif
 " let s:server_command = substitute(expand('<sfile>:p:h'), ' ', '\\ ', 'g') . '/../../scripts/vim-matlab-server.py'
 let s:server_command = substitute(fnamemodify(expand('<sfile>:p:h'), ':p'), ' ', '\\ ', 'g') . '/../../scripts/vim-matlab-server.py'
 
-
-
 command! MatlabLaunchServer :execute 'normal! ' . s:split_command . s:server_command . '<CR>'
 
 command! MatlabNormalModeCreateCell :execute 'normal! :set paste<CR>m`O%%<ESC>``:set nopaste<CR>'
@@ -38,7 +36,7 @@ endif
 if g:matlab_auto_mappings
   nnoremap <buffer>         <leader>rn :MatlabRename
   nnoremap <buffer><silent> <leader>fn :MatlabFixName<CR>
-  vnoremap <buffer><silent> <C-m> <ESC>:MatlabCliRunSelection<CR>
+  " vnoremap <buffer><silent> <C-m> <ESC>:MatlabCliRunSelection<CR>
   nnoremap <buffer><silent> <C-m> <ESC>:MatlabCliRunCell<CR>
   nnoremap <buffer><silent> <C-h> :MatlabCliRunLine<CR>
   nnoremap <buffer><silent> ,i <ESC>:MatlabCliViewVarUnderCursor<CR>
@@ -49,4 +47,5 @@ if g:matlab_auto_mappings
   nnoremap <buffer><silent> <C-l> :MatlabNormalModeCreateCell<CR>
   vnoremap <buffer><silent> <C-l> :<C-u>MatlabVisualModeCreateCell<CR>
   inoremap <buffer><silent> <C-l> <C-o>:MatlabInsertModeCreateCell<CR>
+  nnoremap <buffer><silent> <leader><C-m> :MatlabLaunchServer<CR>
 endif
